@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Experimental Game — Future City</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <!-- UI overlays -->
+    <div id="hud" class="hidden">
+      <div id="health-bar">❤️ <span id="health-value">100</span>/100</div>
+      <div id="inventory-toggle" class="hud-btn">🎒</div>
+    </div>
+    <div id="interaction-prompt" class="hidden">Press <kbd>E</kbd> to interact</div>
+    <div id="dialogue-box" class="hidden">
+      <div id="dialogue-portrait"></div>
+      <div id="dialogue-name"></div>
+      <div id="dialogue-text"></div>
+      <div id="dialogue-choices"></div>
+      <button id="dialogue-continue">Continue ▶</button>
+    </div>
+    <div id="combat-overlay" class="hidden">
+      <div id="combat-hud">
+        <div id="enemy-hp-bar">⚔️ <span id="enemy-name">Enemy</span> HP: <span id="enemy-hp">-</span>/<span id="enemy-max-hp">-</span></div>
+        <div id="player-combat-hp">❤️ HP: <span id="player-combat-hp-val">100</span>/100</div>
+        <div id="combat-actions">
+          <button class="combat-btn" data-action="attack">⚔️ Attack</button>
+          <button class="combat-btn" data-action="item">🎒 Use Item</button>
+          <button class="combat-btn" data-action="defend">🛡️ Defend</button>
+        </div>
+      </div>
+      <div id="combat-log"></div>
+    </div>
+    <div id="inventory-panel" class="hidden">
+      <h3>Inventory</h3>
+      <div id="inventory-items"></div>
+      <button id="inventory-close">Close</button>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

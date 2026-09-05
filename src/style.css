@@ -1,0 +1,208 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  overflow: hidden;
+  background: #000;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+  user-select: none;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden { display: none !important; }
+
+/* HUD */
+#hud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 18px;
+  background: rgba(0,0,0,0.6);
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.hud-btn {
+  cursor: pointer;
+  font-size: 22px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+}
+.hud-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* Interaction prompt */
+#interaction-prompt {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+#interaction-prompt kbd {
+  background: rgba(255,255,255,0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* Dialogue box */
+#dialogue-box {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 700px;
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(4px);
+}
+
+#dialogue-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8cf;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#dialogue-text {
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 60px;
+}
+
+#dialogue-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#dialogue-choices button {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+#dialogue-choices button:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: #8cf;
+}
+
+#dialogue-continue {
+  align-self: flex-end;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 6px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+#dialogue-continue:hover { background: rgba(255,255,255,0.25); }
+
+/* Combat overlay */
+#combat-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  backdrop-filter: blur(4px);
+}
+
+#combat-hud {
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,50,50,0.4);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#enemy-hp-bar { font-size: 18px; }
+#enemy-name { color: #f44; font-weight: 700; }
+#player-combat-hp { font-size: 16px; }
+
+.combat-btn {
+  padding: 10px 24px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.combat-btn:hover { background: rgba(255,255,255,0.2); }
+
+#combat-log {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 14px;
+  color: #aaa;
+  text-align: center;
+}
+
+/* Inventory panel */
+#inventory-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 300px;
+}
+#inventory-items { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+#inventory-items button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#inventory-items button:hover { background: rgba(255,255,255,0.2); }
+#inventory-close {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 6px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+}
