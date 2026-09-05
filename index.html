@@ -10,14 +10,20 @@
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
     <!-- UI overlays -->
-    <div id="hud" class="hidden">
-      <div id="health-bar">❤️ <span id="health-value">100</span>/100</div>
-      <div id="inventory-toggle" class="hud-btn">🎒</div>
+    <div id="hud" class="hidden glass-panel">
+      <div id="health-bar">
+        <div class="hud-label"><span class="hud-icon">❤️</span> HP</div>
+        <div id="hp-bar-bg" class="hp-bar-bg"><div id="hp-bar-fill" class="hp-bar-fill hp-high" style="width:100%"></div></div>
+        <span id="health-value-text" class="hp-value"><span id="health-value">100</span>/<span id="health-max">100</span></span>
+      </div>
+      <div id="inventory-toggle" class="hud-btn" title="Inventory (I)">🎒</div>
     </div>
     <div id="interaction-prompt" class="hidden">Press <kbd>E</kbd> to interact</div>
     <div id="dialogue-box" class="hidden">
-      <div id="dialogue-portrait"></div>
-      <div id="dialogue-name"></div>
+      <div id="dialogue-header">
+        <div id="dialogue-portrait"></div>
+        <div id="dialogue-name"></div>
+      </div>
       <div id="dialogue-text"></div>
       <div id="dialogue-choices"></div>
       <div id="custom-input-container" class="hidden">
@@ -27,9 +33,18 @@
       <button id="dialogue-continue">Continue ▶</button>
     </div>
     <div id="combat-overlay" class="hidden">
-      <div id="combat-hud">
-        <div id="enemy-hp-bar">⚔️ <span id="enemy-name">Enemy</span> HP: <span id="enemy-hp">-</span>/<span id="enemy-max-hp">-</span></div>
-        <div id="player-combat-hp">❤️ HP: <span id="player-combat-hp-val">100</span>/100</div>
+      <div id="combat-hud" class="glass-panel">
+        <div id="enemy-hp-bar" class="combatant-row combatant-enemy">
+          <div class="hud-label"><span class="hud-icon">⚔️</span> <span id="enemy-name">Enemy</span></div>
+          <div id="enemy-hp-bar-bg" class="hp-bar-bg hp-bar-lg"><div id="enemy-hp-bar-fill" class="hp-bar-fill hp-high" style="width:100%"></div></div>
+          <span class="hp-value"><span id="enemy-hp">-</span>/<span id="enemy-max-hp">-</span></span>
+        </div>
+        <div id="combo-display" class="hidden"><span class="combo-icon">🔥</span> Combo x<span id="combo-count">1</span></div>
+        <div id="player-combat-hp" class="combatant-row combatant-player">
+          <div class="hud-label"><span class="hud-icon">❤️</span> You</div>
+          <div id="player-hp-bar-bg" class="hp-bar-bg hp-bar-lg"><div id="player-hp-bar-fill" class="hp-bar-fill hp-high" style="width:100%"></div></div>
+          <span class="hp-value"><span id="player-combat-hp-val">100</span>/<span id="player-combat-max-hp">100</span></span>
+        </div>
         <div id="combat-actions">
           <button class="combat-btn" data-action="attack">⚔️ Attack</button>
           <button class="combat-btn" data-action="item">🎒 Use Item</button>
@@ -38,11 +53,12 @@
       </div>
       <div id="combat-log"></div>
     </div>
-    <div id="inventory-panel" class="hidden">
-      <h3>Inventory</h3>
+    <div id="inventory-panel" class="hidden glass-panel">
+      <h3>🎒 Inventory</h3>
       <div id="inventory-items"></div>
       <button id="inventory-close">Close</button>
     </div>
+    <div id="toast-container"></div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

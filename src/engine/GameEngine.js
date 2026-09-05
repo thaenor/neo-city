@@ -19,6 +19,8 @@ export class GameEngine {
     this.isLocked = false; // mouse lock state
     this.updateCallbacks = [];
     this.elapsedTime = 0;
+    this.feel = null;
+    this.baseFov = 60;
 
     this._initRenderer();
     this._initCamera();
@@ -119,37 +121,165 @@ export class GameEngine {
   }
 
   /**
-   * Create a simple placeholder player character.
+   * Create a detailed sci-fi explorer character with faceted armor, helmet, and jetpack.
    */
   createPlayer() {
     const group = new THREE.Group();
 
-    // Body (capsule-like with cylinder + sphere)
-    const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.4, 0.5, 1.0, 8),
-      new THREE.MeshStandardMaterial({ color: 0x44aaff, metalness: 0.3, roughness: 0.6 })
-    );
-    body.position.y = 0.5;
-    body.castShadow = true;
-    group.add(body);
+    // Materials
+    const armorMat = new THREE.MeshStandardMaterial({ color: 0x2a4a8a, metalness: 0.4, roughness: 0.3 });
+    const armorDarkMat = new THREE.MeshStandardMaterial({ color: 0x1a3a6a, metalness: 0.5, roughness: 0.4 });
+    const jointMat = new THREE.MeshStandardMaterial({ color: 0x8899aa, metalness: 0.6, roughness: 0.2 });
+    const jointDarkMat = new THREE.MeshStandardMaterial({ color: 0x667788, metalness: 0.5, roughness: 0.3 });
+    const helmetMat = new THREE.MeshStandardMaterial({ color: 0xccddee, roughness: 0.3, metalness: 0.1, flatShading: true });
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x44ddff, emissive: 0x44ddff, emissiveIntensity: 0.5 });
 
-    // Head
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.25, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.7 })
+    // 1. Torso — hexagonal cross-section
+    const torso = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.45, 0.5, 6),
+      armorMat
     );
-    head.position.y = 1.25;
-    head.castShadow = true;
-    group.add(head);
+    torso.position.y = 0.5;
+    torso.castShadow = true;
+    group.add(torso);
 
-    // Eyes (little dots)
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
-    eyeL.position.set(-0.1, 1.3, 0.23);
-    group.add(eyeL);
-    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
-    eyeR.position.set(0.1, 1.3, 0.23);
-    group.add(eyeR);
+    // 2. Chest plate — thin armor on front
+    const chest = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.15, 0.05),
+      jointMat
+    );
+    chest.position.set(0, 0.6, 0.2);
+    chest.castShadow = true;
+    group.add(chest);
+
+    // 3. Core jewel — glowing center
+    const jewel = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 8, 8),
+      visorMat
+    );
+    jewel.position.set(0, 0.6, 0.24);
+    group.add(jewel);
+
+    // 4. Helmet — faceted dome via LatheGeometry
+    const helmetPoints = [
+      new THREE.Vector2(0, 0),
+      new THREE.Vector2(0.22, 0.05),
+      new THREE.Vector2(0.24, 0.1),
+      new THREE.Vector2(0.22, 0.2),
+      new THREE.Vector2(0.1, 0.28),
+      new THREE.Vector2(0, 0.3),
+    ];
+    const helmet = new THREE.Mesh(
+      new THREE.LatheGeometry(helmetPoints, 8),
+      helmetMat
+    );
+    helmet.position.y = 1.05;
+    helmet.castShadow = true;
+    group.add(helmet);
+
+    // 5. Visor slit — glowing strip
+    const visor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.05, 0.02),
+      visorMat
+    );
+    visor.position.set(0, 1.1, 0.23);
+    group.add(visor);
+
+    // 6. Helmet antenna
+    const antenna = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.015, 0.15),
+      jointMat
+    );
+    antenna.position.set(0, 1.35, 0);
+    antenna.castShadow = true;
+    group.add(antenna);
+    const antennaTip = new THREE.Mesh(
+      new THREE.SphereGeometry(0.025, 6, 6),
+      visorMat
+    );
+    antennaTip.position.set(0, 1.425, 0);
+    group.add(antennaTip);
+
+    // 7. Left arm
+    const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), jointMat);
+    shoulderL.position.set(-0.38, 0.8, 0);
+    shoulderL.castShadow = true;
+    group.add(shoulderL);
+    const armUpperL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.25), jointMat);
+    armUpperL.position.set(-0.34, 0.7, 0);
+    armUpperL.castShadow = true;
+    group.add(armUpperL);
+    const armLowerL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.2), jointDarkMat);
+    armLowerL.position.set(-0.34, 0.45, 0);
+    armLowerL.castShadow = true;
+    group.add(armLowerL);
+
+    // 8. Right arm
+    const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), jointMat);
+    shoulderR.position.set(0.38, 0.8, 0);
+    shoulderR.castShadow = true;
+    group.add(shoulderR);
+    const armUpperR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.25), jointMat);
+    armUpperR.position.set(0.34, 0.7, 0);
+    armUpperR.castShadow = true;
+    group.add(armUpperR);
+    const armLowerR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.2), jointDarkMat);
+    armLowerR.position.set(0.34, 0.45, 0);
+    armLowerR.castShadow = true;
+    group.add(armLowerR);
+
+    // 9. Left leg
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.35), armorMat);
+    legL.position.set(-0.12, 0.175, 0);
+    legL.castShadow = true;
+    group.add(legL);
+    const bootL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.08), armorDarkMat);
+    bootL.position.set(-0.12, 0.04, 0);
+    bootL.castShadow = true;
+    group.add(bootL);
+
+    // 10. Right leg
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.35), armorMat);
+    legR.position.set(0.12, 0.175, 0);
+    legR.castShadow = true;
+    group.add(legR);
+    const bootR = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.08), armorDarkMat);
+    bootR.position.set(0.12, 0.04, 0);
+    bootR.castShadow = true;
+    group.add(bootR);
+
+    // 11. Backpack / jetpack
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.12), armorDarkMat);
+    pack.position.set(0, 0.55, -0.25);
+    pack.castShadow = true;
+    group.add(pack);
+    const thrusterL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.06, 8), jointDarkMat);
+    thrusterL.position.set(-0.08, 0.48, -0.3);
+    thrusterL.castShadow = true;
+    group.add(thrusterL);
+    const thrusterR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.06, 8), jointDarkMat);
+    thrusterR.position.set(0.08, 0.48, -0.3);
+    thrusterR.castShadow = true;
+    group.add(thrusterR);
+    const glowL = new THREE.Mesh(new THREE.CircleGeometry(0.035, 8), visorMat);
+    glowL.position.set(-0.08, 0.45, -0.33);
+    thrusterL.add(glowL);
+    const glowR = new THREE.Mesh(new THREE.CircleGeometry(0.035, 8), visorMat);
+    glowR.position.set(0.08, 0.45, -0.33);
+    thrusterR.add(glowR);
+
+    // 12. Shoulder pads
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x2a4a8a, metalness: 0.5, roughness: 0.2 });
+    const padL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6, 0, Math.PI * 2, 0, Math.PI / 2), padMat);
+    padL.position.set(-0.38, 0.85, -0.02);
+    padL.rotation.x = -0.3;
+    padL.castShadow = true;
+    group.add(padL);
+    const padR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6, 0, Math.PI * 2, 0, Math.PI / 2), padMat);
+    padR.position.set(0.38, 0.85, -0.02);
+    padR.rotation.x = -0.3;
+    padR.castShadow = true;
+    group.add(padR);
 
     // Spawn on the overlook platform looking down at the city
     group.position.set(0, 2.0, -28);
@@ -237,6 +367,13 @@ export class GameEngine {
   }
 
   /**
+   * Wire in the GameFeel bundle. Called once from main.js.
+   */
+  setFeelInstances(feel) {
+    this.feel = feel;
+  }
+
+  /**
    * Register a per-frame update callback. Receives (delta, totalElapsed).
    */
   registerUpdateCallback(fn) {
@@ -257,6 +394,11 @@ export class GameEngine {
       if (!this.playerLocked) {
         this._updatePlayer(delta);
         this._checkInteractions();
+      }
+
+      // Game feel (shake, tweens, hitstop, FOV punch) — always live
+      if (this.feel) {
+        this.feel.update(delta, this.camera);
       }
 
       // Custom update callbacks (particles, animations, etc.)

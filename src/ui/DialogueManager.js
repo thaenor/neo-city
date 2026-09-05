@@ -3,7 +3,7 @@ import { generateNPCDialogue } from '../firebase/firebase.js';
 /**
  * Manages the dialogue UI and NPC conversation flow.
  * Features: scripted intro → AI dialogue, custom text input,
- * AI action metadata parsing (give_item, initiate_battle, emote, npc_move).
+ * AI action metadata parsing, typewriter text effect, NPC accent colors.
  */
 export class DialogueManager {
   constructor() {
@@ -24,6 +24,21 @@ export class DialogueManager {
     this.customInput = document.getElementById('custom-input');
     this.customSendBtn = document.getElementById('custom-send-btn');
     this.promptEl = document.getElementById('interaction-prompt');
+    this.portraitEl = document.getElementById('dialogue-portrait');
+
+    // Typewriter state
+    this.typewriterTimer = null;
+    this.typewriterIndex = 0;
+    this.typewriterText = '';
+    this.isTyping = false;
+
+    // NPC color accent map (id → hex color)
+    this.npcColors = {
+      nova: '#ff66aa',
+      kade: '#ff4444',
+      zara: '#88ddff',
+      rigo: '#ffaa44',
+    };
 
     // Session storage
     this.STORAGE_KEY = 'game_npc_history';
@@ -86,7 +101,20 @@ export class DialogueManager {
     this.box.classList.remove('hidden');
     this.promptEl.classList.add('hidden');
 
+    // Set accent color + name
+    const accent = this.npcColors[detail.npc.id] || '#8cf';
     this.nameEl.textContent = detail.npc.name;
+    this.nameEl.style.borderLeft = `3px solid ${accent}`;
+    this.nameEl.style.paddingLeft = '10px';
+
+    // Portrait circle with initials
+    if (this.portraitEl) {
+      this.portraitEl.style.borderColor = accent;
+      const name = detail.npc.name || '?';
+      const initial = name.charAt(0).toUpperCase();
+      this.portraitEl.textContent = initial;
+    }
+
     this.choicesEl.innerHTML = '';
     this.customInputContainer.classList.add('hidden');
     this.customInput.value = '';
@@ -104,9 +132,11 @@ export class DialogueManager {
 
   _showScriptedLine() {
     if (this.scriptedIndex < this.scriptedLines.length) {
-      this.textEl.textContent = this.scriptedLines[this.scriptedIndex];
+      this._stopTypewriter();
+      const line = this.scriptedLines[this.scriptedIndex];
       this.scriptedIndex++;
-      this._addToHistory(this.currentNpc.id, 'model', this.scriptedLines[this.scriptedIndex - 1]);
+      this._typewriterShow(line);
+      this._addToHistory(this.currentNpc.id, 'model', line);
     } else {
       this._transitionToAI();
     }
@@ -205,6 +235,34 @@ export class DialogueManager {
     }
   }
 
+  /** Typewriter: reveal text one character at a time, ~50ms per char */
+  _typewriterShow(text) {
+    this._stopTypewriter();
+    this.isTyping = true;
+    this.typewriterText = text;
+    this.typewriterIndex = 0;
+    this.textEl.textContent = '';
+    this.textEl.classList.add('typing');
+
+    this.typewriterTimer = setInterval(() => {
+      if (this.typewriterIndex < this.typewriterText.length) {
+        this.textEl.textContent += this.typewriterText[this.typewriterIndex];
+        this.typewriterIndex++;
+      } else {
+        this._stopTypewriter();
+      }
+    }, 50);
+  }
+
+  _stopTypewriter() {
+    if (this.typewriterTimer) {
+      clearInterval(this.typewriterTimer);
+      this.typewriterTimer = null;
+    }
+    this.isTyping = false;
+    this.textEl.classList.remove('typing');
+  }
+
   async _aiChat(playerMessage) {
     this.textEl.textContent = '🤔 Thinking...';
     this.choicesEl.innerHTML = '';
@@ -233,8 +291,15 @@ export class DialogueManager {
       responseText = fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
 
-    this.textEl.textContent = responseText;
+    this.textEl.textContent = '';
     this._addToHistory(npc.id, 'model', responseText);
+
+    // Use typewriter for AI responses under 200 chars
+    if (responseText.length <= 200) {
+      this._typewriterShow(responseText);
+    } else {
+      this.textEl.textContent = responseText;
+    }
 
     // Dispatch any AI-suggested actions
     this._dispatchActions(actions);
@@ -318,6 +383,7 @@ export class DialogueManager {
   }
 
   _close() {
+    this._stopTypewriter();
     this.isOpen = false;
     this.box.classList.add('hidden');
     this.customInputContainer.classList.add('hidden');
