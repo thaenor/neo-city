@@ -50,8 +50,8 @@ export class GameEngine {
 
   _initCamera() {
     this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-    this.camera.position.set(0, 8, 12);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(-14, 6, -8);
+    this.camera.lookAt(-14, 0, -20);
   }
 
   _initLights() {
@@ -311,8 +311,8 @@ export class GameEngine {
     padR.castShadow = true;
     group.add(padR);
 
-    // Spawn on the overlook platform looking down at the city
-    group.position.set(0, 2.0, -28);
+    // Spawn near the NW corner of the city, facing the plaza
+    group.position.set(-14, 0, -20);
     this.scene.add(group);
     this.player = group;
 
@@ -324,6 +324,11 @@ export class GameEngine {
    */
   _updatePlayer(delta) {
     if (!this.player) return;
+
+    // Skip movement while typing in input fields
+    const isTyping = document.activeElement &&
+      (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    if (isTyping) return;
 
     const speed = 6.0 * delta;
     const dir = new THREE.Vector3();

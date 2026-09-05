@@ -138,7 +138,7 @@ export const NPC_DEFINITIONS = [
       name: 'Info Chip',
       onGiveMessage: 'Here, take this info chip. Might help you navigate the city. I got plenty more where that came from — if you prove useful.',
     },
-    spawnPosition: new THREE.Vector3(-18, 0, -22),
+    spawnPosition: new THREE.Vector3(-6, 0, -7),
     firstGreeting: 'You look lost. New to the city?',
     scriptedIntro: [
       'You look lost. New to the city? Name\'s Nova. I run data in these parts.',
@@ -161,7 +161,7 @@ export const NPC_DEFINITIONS = [
       name: 'Shield Token',
       onGiveMessage: 'You\'ve got guts. Take this shield token — it\'ll absorb one hit in a fight. Don\'t waste it.',
     },
-    spawnPosition: new THREE.Vector3(14, 0, -18),
+    spawnPosition: new THREE.Vector3(6, 0, -7),
     firstGreeting: 'Hmph. Another face I don\'t recognize.',
     scriptedIntro: [
       'Hmph. Another face I don\'t recognize. Name\'s Kade.',
@@ -183,7 +183,7 @@ export const NPC_DEFINITIONS = [
       name: 'Memory Fragment',
       onGiveMessage: 'A piece of my memory, crystallized. Use it when you need healing — it\'ll restore your spirit.',
     },
-    spawnPosition: new THREE.Vector3(20, 0, 24),
+    spawnPosition: new THREE.Vector3(-6, 0, 7),
     firstGreeting: 'I see you. The ones who see light can find the truth.',
     scriptedIntro: [
       'I see you. The ones who see light can find the truth.',
@@ -199,13 +199,14 @@ export const NPC_DEFINITIONS = [
     personality: 'Jovial, talkative, well-connected. Uses humor to deflect. Generous with information.',
     color: 0xffaa44,
     systemPrompt: `You are Rigo, a street vendor and former maintenance engineer. You're cheerful, talkative, and love sharing city gossip. You use humor to deflect personal questions. You know everyone in the city and are happy to share rumors. You can give the player a repair_kit when they've been helpful. Keep responses 1-3 sentences. Be warm and conversational.${actionFormat}`,
-    canBattle: false,
+    canBattle: true,
+    battleTrigger: 'dialogue_choice',
     givesItem: {
       id: 'repair_kit',
       name: 'Repair Kit',
       onGiveMessage: 'Here, a repair kit. Fixes just about anything. I scavenged the parts myself — top quality!',
     },
-    spawnPosition: new THREE.Vector3(-14, 0, 28),
+    spawnPosition: new THREE.Vector3(6, 0, 7),
     firstGreeting: 'Hey hey! Fresh face! Come, come — I got the best salvaged tech in the sector!',
     scriptedIntro: [
       'Hey hey! Fresh face! Come, come — I got the best salvaged tech in the sector!',

@@ -180,7 +180,7 @@ export class DialogueManager {
       'Goodbye.',
     ];
 
-    if (this.currentNpc?.id === 'kade') {
+    if (this.currentNpc?.canBattle) {
       options.push('I want to fight you.');
     }
 
