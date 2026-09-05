@@ -26,6 +26,11 @@ A deployable 3D third-person Pokémon-like game (Three.js, browser) with AI-driv
 - [09 MVP Item System](tickets/09-mvp-item-system.md): 5 item types (health potion, shield token, info chip, memory fragment, repair kit), inventory add/remove/use.
 - [10 NPC State Machine](tickets/10-npc-state-machine.md): Scripted intro → AI dialogue → battle trigger (Kade) / item giving flow.
 - [11 Firebase Deploy Config](tickets/11-firebase-deploy-config.md): Build + deploy to Firebase Hosting verified. Live at https://game-test-7da9e.web.app.
+- [R1 Central Landmark Tower](tickets/R1-central-landmark-tower.md): 12-unit tapered tower with glowing crown beacon, vertical accent lines, rings.
+- [R2 City Elevation Tiers](tickets/R2-city-elevation-tiers.md): 4 elevation tiers (overlook y=2 → upper mid y=1 → core y=0 → basin y=-0.5).
+- [R3 Neon Signage](tickets/R3-neon-signage.md): ~40 animated holographic ad panels across buildings, 6 color variants.
+- [R4 Distant Skyline](tickets/R4-distant-skyline.md): ~20 distant towers (6-14 units) with crown lights, depth-layered behind city.
+- [R5 Atmospheric Sky & Lighting](tickets/R5-atmospheric-sky-lighting.md): Aurora sky shader, starfield, horizon glow, reduced fog density.
 
 ## Tickets
 
@@ -42,6 +47,16 @@ A deployable 3D third-person Pokémon-like game (Three.js, browser) with AI-driv
 | [09 MVP Item System](tickets/09-mvp-item-system.md) | ✅ Closed | 04 |
 | [10 NPC State Machine](tickets/10-npc-state-machine.md) | ✅ Closed | 06, 08, 09 |
 | [11 Firebase Deploy Config](tickets/11-firebase-deploy-config.md) | ✅ Closed | 01, 10 |
+
+## Refinement Tickets (city layout revamp)
+
+| Ticket | Status | Blocked By |
+|--------|--------|-----------|
+| [R1 Central Landmark Tower](tickets/R1-central-landmark-tower.md) | ✅ Closed | — |
+| [R2 City Elevation Tiers](tickets/R2-city-elevation-tiers.md) | ✅ Closed | R1 |
+| [R3 Neon Signage](tickets/R3-neon-signage.md) | ✅ Closed | R2 |
+| [R4 Distant Skyline](tickets/R4-distant-skyline.md) | ✅ Closed | R2 |
+| [R5 Atmospheric Sky & Lighting](tickets/R5-atmospheric-sky-lighting.md) | ✅ Closed | R3, R4 |
 
 ## Not yet specified
 

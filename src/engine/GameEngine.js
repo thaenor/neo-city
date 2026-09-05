@@ -151,7 +151,8 @@ export class GameEngine {
     eyeR.position.set(0.1, 1.3, 0.23);
     group.add(eyeR);
 
-    group.position.set(0, 0, 0);
+    // Spawn on the overlook platform looking down at the city
+    group.position.set(0, 2.0, -28);
     this.scene.add(group);
     this.player = group;
 
