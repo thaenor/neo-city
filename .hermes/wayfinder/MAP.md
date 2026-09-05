@@ -17,11 +17,11 @@ A polished, deployable 3D third-person game (Three.js, browser) set in a compact
 
 | Ticket | Status | Blocked By |
 |--------|--------|-----------|
-| [T1 Redesign City Layout — Flat Grid](tickets/T1-city-layout.md) | 🔵 Open | — |
-| [T2 Fix Input — Block WASD While Typing](tickets/T2-input-blocking.md) | 🔵 Open | — |
-| [T3 Fix Battle System End-to-End](tickets/T3-battle-system.md) | 🔵 Open | T2 |
-| [T4 Fix Item Menu / Inventory Panel](tickets/T4-item-menu.md) | 🔵 Open | — |
-| [T5 City Visual Polish — Shaders & Assets](tickets/T5-visual-polish.md) | 🔵 Open | T1 |
-| [T6 Lock In Storyline & NPC Roles](tickets/T6-storyline.md) | 🔵 Open | — |
-| [T7 Git Remote + GitHub Actions CI/CD](tickets/T7-git-cicd.md) | 🔵 Open | — |
-| [T8 Testing Structure / QA Workflow](tickets/T8-testing.md) | 🔵 Open | — |
+| [T1 Redesign City Layout — Flat Grid](tickets/T1-city-layout.md) | ✅ Closed | — |
+| [T2 Fix Input — Block WASD While Typing](tickets/T2-input-blocking.md) | ✅ Closed | — |
+| [T3 Fix Battle System End-to-End](tickets/T3-battle-system.md) | ✅ Closed | T2 |
+| [T4 Fix Item Menu / Inventory Panel](tickets/T4-item-menu.md) | ✅ Closed | — |
+| [T5 City Visual Polish — Shaders & Assets](tickets/T5-visual-polish.md) | ✅ Closed | T1 |
+| [T6 Lock In Storyline & NPC Roles](tickets/T6-storyline.md) | ✅ Closed | — |
+| [T7 Git Remote + GitHub Actions CI/CD](tickets/T7-git-cicd.md) | ✅ Closed | — |
+| [T8 Testing Structure / QA Workflow](tickets/T8-testing.md) | ✅ Closed | — |
