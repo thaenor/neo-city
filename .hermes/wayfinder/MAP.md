@@ -25,6 +25,7 @@ A deployable 3D third-person Pokémon-like game (Three.js, browser) with AI-driv
 - [08 MVP Combat System](tickets/08-mvp-combat-system.md): Turn-based combat with attack/defend/item, HP bars, win/lose conditions.
 - [09 MVP Item System](tickets/09-mvp-item-system.md): 5 item types (health potion, shield token, info chip, memory fragment, repair kit), inventory add/remove/use.
 - [10 NPC State Machine](tickets/10-npc-state-machine.md): Scripted intro → AI dialogue → battle trigger (Kade) / item giving flow.
+- [11 Firebase Deploy Config](tickets/11-firebase-deploy-config.md): Build + deploy to Firebase Hosting verified. Live at https://game-test-7da9e.web.app.
 
 ## Tickets
 
@@ -40,17 +41,14 @@ A deployable 3D third-person Pokémon-like game (Three.js, browser) with AI-driv
 | [08 MVP Combat System](tickets/08-mvp-combat-system.md) | ✅ Closed | 03, 06 |
 | [09 MVP Item System](tickets/09-mvp-item-system.md) | ✅ Closed | 04 |
 | [10 NPC State Machine](tickets/10-npc-state-machine.md) | ✅ Closed | 06, 08, 09 |
-| [11 Firebase Deploy Config](tickets/11-firebase-deploy-config.md) | 🔵 Open | 01, 10 |
+| [11 Firebase Deploy Config](tickets/11-firebase-deploy-config.md) | ✅ Closed | 01, 10 |
 
 ## Not yet specified
 
 - **Art / visual polish**: what style of placeholder to use (low-poly, geometric, cel-shaded wireframe) and any post-processing
 - **Sound / music**: no requirement yet, could add minimal ambient or SFX
 - **Multiplayer / persistence**: single-player only confirmed; save/load state not yet specified
-- **Combat depth**: MVP means basic attack + enemy attack; no elements/types/status effects yet, but the design of what "basic" means needs resolution
-- **Item types**: health potion minimum; what else (buff items, catch items?) undecided
-- **City layout / scale**: number of buildings, NPC count, map boundaries
-- **Firebase Gen AI exact API**: whether to use REST or Firebase Gen Kit SDK; model selection (Gemini 1.5/2.0)
+- **Gen AI model testing**: Gemini 2.0 Flash configured but not yet tested with live API calls
 
 ## Out of scope
 
