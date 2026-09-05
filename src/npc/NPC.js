@@ -12,19 +12,17 @@ export class NPC {
     this.personality = config.personality;
     this.systemPrompt = config.systemPrompt;
     this.color = config.color || 0x44ff88;
-    this.givesItem = config.givesItem || null; // { id, name, onGiveMessage }
+    this.givesItem = config.givesItem || null;
     this.canBattle = config.canBattle || false;
-    this.battleTrigger = config.battleTrigger || 'after_dialogue'; // 'after_dialogue' | 'on_approach' | 'dialogue_choice'
+    this.battleTrigger = config.battleTrigger || 'after_dialogue';
     this.spawnPosition = config.spawnPosition || new THREE.Vector3(0, 0, 0);
     this.firstGreeting = config.firstGreeting || 'Hello...';
     this.scriptedIntro = config.scriptedIntro || [];
     this.isInCombat = false;
     this.conversationCount = 0;
 
-    // Mesh
     this.mesh = this._createMesh();
 
-    // Interaction state
     this.currentDialogueIndex = 0;
     this.hasMet = false;
   }
@@ -32,7 +30,6 @@ export class NPC {
   _createMesh() {
     const group = new THREE.Group();
 
-    // Body
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(0.35, 0.4, 0.9, 8),
       new THREE.MeshStandardMaterial({ color: this.color, metalness: 0.3, roughness: 0.5 })
@@ -41,7 +38,6 @@ export class NPC {
     body.castShadow = true;
     group.add(body);
 
-    // Head
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.22, 8, 8),
       new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.7 })
@@ -50,7 +46,6 @@ export class NPC {
     head.castShadow = true;
     group.add(head);
 
-    // Eyes
     const eyeMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const el = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), eyeMat);
     el.position.set(-0.08, 1.15, 0.2);
@@ -59,7 +54,6 @@ export class NPC {
     er.position.set(0.08, 1.15, 0.2);
     group.add(er);
 
-    // Name tag glow ring
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 16),
       new THREE.MeshStandardMaterial({
@@ -85,7 +79,6 @@ export class NPC {
     if (!this.hasMet) {
       this.hasMet = true;
       this.currentDialogueIndex = 0;
-      // Start scripted intro
       document.dispatchEvent(new CustomEvent('start-dialogue', {
         detail: {
           npc: this,
@@ -95,7 +88,6 @@ export class NPC {
         }
       }));
     } else {
-      // AI-driven conversation
       document.dispatchEvent(new CustomEvent('start-dialogue', {
         detail: {
           npc: this,
@@ -120,7 +112,17 @@ export class NPC {
 
 /**
  * NPC definitions — full backstories, personalities, and system prompts.
+ * Each system prompt now includes action metadata instructions so the AI
+ * can trigger game events by appending JSON.
  */
+const actionFormat = `\n\nCRITICAL: You can trigger game actions by appending a JSON object after your response on a new line. Supported actions:
+- {"action":"give_item","item_id":"health_potion"} — give the player an item
+- {"action":"initiate_battle"} — challenge the player to a battle
+- {"action":"emote","type":"angry|sad|happy|surprised"} — visual emotional reaction
+- {"action":"npc_move","x":12,"z":-5} — walk to a nearby position and talk from there
+
+Only use actions that fit your character. Give items based on your character's defined item. Use initiate_battle if the player provokes you or you want to test them. Keep the JSON compact on its own line after your spoken response. Do NOT use JSON for normal conversation — only for meaningful game actions.`;
+
 export const NPC_DEFINITIONS = [
   {
     id: 'nova',
@@ -129,7 +131,7 @@ export const NPC_DEFINITIONS = [
     backstory: 'Nova grew up in the lower levels of the city, navigating its data streams and black markets. She became a data runner after her family was displaced by corporate expansion. She trusts few but has a soft spot for those who show genuine kindness.',
     personality: 'Cautious but warm once trust is earned. Speaks in tech-slang. Fiercely independent.',
     color: 0xff66aa,
-    systemPrompt: `You are Nova, a data runner in a futuristic city. You're street-smart, cautious, but friendly once the player shows they're not corporate scum. You speak with technical slang and have a cynical but hopeful view of the city. You offer information in exchange for favors. Your catchphrase: "Data don't lie, but people do." Keep responses 1-3 sentences.`,
+    systemPrompt: `You are Nova, a data runner in a futuristic city. You're street-smart, cautious, but friendly once the player shows they're not corporate scum. You speak with technical slang and have a cynical but hopeful view of the city. You offer information in exchange for favors. Your catchphrase: "Data don't lie, but people do." Keep responses 1-3 sentences. You can give the player an info_chip if they prove trustworthy.${actionFormat}`,
     canBattle: false,
     givesItem: {
       id: 'info_chip',
@@ -151,7 +153,7 @@ export const NPC_DEFINITIONS = [
     backstory: 'Kade served ten years as a security officer for OmniCorp before a betrayal left him framed for a crime he didn\'t commit. Now he works as an independent bounty hunter, tracking down rogue AI and corporate deserters. He\'s gruff but has a strong moral code.',
     personality: 'Gruff, no-nonsense, protective. Distrusts corporations. Will fight if provoked.',
     color: 0xff4444,
-    systemPrompt: `You are Kade, an ex-corporate security officer turned bounty hunter. You're gruff and direct, with a strong moral code. You size people up quickly and don't suffer fools. You're suspicious of anyone too friendly too fast, but you respect competence and courage. If the player challenges you or shows weakness, you may initiate a sparring battle to test them. Keep responses 1-3 sentences.`,
+    systemPrompt: `You are Kade, an ex-corporate security officer turned bounty hunter. You're gruff and direct, with a strong moral code. You size people up quickly and don't suffer fools. You're suspicious of anyone too friendly too fast, but you respect competence and courage. If the player challenges you or shows weakness, you may initiate a sparring battle to test them. Keep responses 1-3 sentences.${actionFormat}`,
     canBattle: true,
     battleTrigger: 'dialogue_choice',
     givesItem: {
@@ -174,7 +176,7 @@ export const NPC_DEFINITIONS = [
     backstory: 'Zara is more digital than physical — she projects herself as a hologram through the city\'s neural network. She was once a human artist who uploaded her consciousness to escape a terminal illness. Now she paints memories across building walls using light and code.',
     personality: 'Dreamy, poetic, mysterious. Speaks in metaphors. Has moments of profound insight.',
     color: 0x88ddff,
-    systemPrompt: `You are Zara, a holographic artist and memory keeper. You speak poetically, often in metaphors about light, memory, and the digital soul. You project warmth and wisdom. You share cryptic knowledge about the city's hidden history. You can give the player a memory fragment that acts as a healing item. Keep responses 1-3 sentences.`,
+    systemPrompt: `You are Zara, a holographic artist and memory keeper. You speak poetically, often in metaphors about light, memory, and the digital soul. You project warmth and wisdom. You share cryptic knowledge about the city's hidden history. You can give the player a memory_fragment that acts as a healing item when they seem to need it. Keep responses 1-3 sentences.${actionFormat}`,
     canBattle: false,
     givesItem: {
       id: 'memory_fragment',
@@ -196,7 +198,7 @@ export const NPC_DEFINITIONS = [
     backstory: 'Rigo runs a stall in the central plaza, selling salvaged tech from the old corporate towers. He was a maintenance engineer before the collapse and kept his sense of humor through it all. He knows everyone and everything happening in the city.',
     personality: 'Jovial, talkative, well-connected. Uses humor to deflect. Generous with information.',
     color: 0xffaa44,
-    systemPrompt: `You are Rigo, a street vendor and former maintenance engineer. You're cheerful, talkative, and love sharing city gossip. You use humor to deflect personal questions. You know everyone in the city and are happy to share rumors. You can give the player a repair kit item. Keep responses 1-3 sentences. Be warm and conversational.`,
+    systemPrompt: `You are Rigo, a street vendor and former maintenance engineer. You're cheerful, talkative, and love sharing city gossip. You use humor to deflect personal questions. You know everyone in the city and are happy to share rumors. You can give the player a repair_kit when they've been helpful. Keep responses 1-3 sentences. Be warm and conversational.${actionFormat}`,
     canBattle: false,
     givesItem: {
       id: 'repair_kit',

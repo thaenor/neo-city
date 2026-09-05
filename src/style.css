@@ -128,6 +128,46 @@ body {
 }
 #dialogue-continue:hover { background: rgba(255,255,255,0.25); }
 
+/* Custom input in dialogue */
+#custom-input-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+#custom-input {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+#custom-input:focus {
+  border-color: #8cf;
+  box-shadow: 0 0 8px rgba(136, 204, 255, 0.25);
+}
+#custom-input::placeholder { color: rgba(255,255,255,0.35); }
+#custom-send-btn {
+  background: #2a6aff;
+  border: none;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+#custom-send-btn:hover { background: #3a7aff; }
+
+button.custom-input-trigger {
+  opacity: 0.7;
+  font-style: italic;
+  border-style: dashed !important;
+}
+
 /* Combat overlay */
 #combat-overlay {
   position: absolute;

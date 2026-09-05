@@ -2,6 +2,8 @@ import { generateNPCDialogue } from '../firebase/firebase.js';
 
 /**
  * Manages the dialogue UI and NPC conversation flow.
+ * Features: scripted intro → AI dialogue, custom text input,
+ * AI action metadata parsing (give_item, initiate_battle, emote, npc_move).
  */
 export class DialogueManager {
   constructor() {
@@ -10,8 +12,6 @@ export class DialogueManager {
     this.conversationType = null; // 'scripted' | 'ai'
     this.scriptedLines = [];
     this.scriptedIndex = 0;
-    this.history = []; // { role, parts } for Gen AI context
-    this.onResolve = null; // callback when dialogue ends
     this.lockInteraction = true;
 
     // DOM refs
@@ -20,9 +20,12 @@ export class DialogueManager {
     this.textEl = document.getElementById('dialogue-text');
     this.choicesEl = document.getElementById('dialogue-choices');
     this.continueBtn = document.getElementById('dialogue-continue');
+    this.customInputContainer = document.getElementById('custom-input-container');
+    this.customInput = document.getElementById('custom-input');
+    this.customSendBtn = document.getElementById('custom-send-btn');
     this.promptEl = document.getElementById('interaction-prompt');
 
-    // Session storage key
+    // Session storage
     this.STORAGE_KEY = 'game_npc_history';
 
     this._loadSessionHistory();
@@ -41,7 +44,7 @@ export class DialogueManager {
   _saveSessionHistory() {
     try {
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.allHistory));
-    } catch { /* sessionStorage may be full */ }
+    } catch { /* may be full */ }
   }
 
   _getNpcHistory(npcId) {
@@ -51,7 +54,6 @@ export class DialogueManager {
   _addToHistory(npcId, role, text) {
     if (!this.allHistory[npcId]) this.allHistory[npcId] = [];
     this.allHistory[npcId].push({ role, parts: [{ text }] });
-    // Keep last 20 exchanges max per NPC
     if (this.allHistory[npcId].length > 20) {
       this.allHistory[npcId] = this.allHistory[npcId].slice(-20);
     }
@@ -59,17 +61,21 @@ export class DialogueManager {
   }
 
   _bindEvents() {
-    // Continue button
     this.continueBtn.addEventListener('click', () => this._onContinue());
 
-    // Keyboard Enter to continue
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && this.isOpen && this.conversationType === 'scripted') {
-        this._onContinue();
+      if (e.key === 'Enter' && this.isOpen) {
+        if (this.conversationType === 'scripted') {
+          this._onContinue();
+        } else if (!this.customInputContainer.classList.contains('hidden')) {
+          // Send custom input on Enter
+          this._sendCustomInput();
+        }
       }
     });
 
-    // NPC interaction events from engine
+    this.customSendBtn.addEventListener('click', () => this._sendCustomInput());
+
     document.addEventListener('start-dialogue', (e) => this._open(e.detail));
   }
 
@@ -82,6 +88,8 @@ export class DialogueManager {
 
     this.nameEl.textContent = detail.npc.name;
     this.choicesEl.innerHTML = '';
+    this.customInputContainer.classList.add('hidden');
+    this.customInput.value = '';
 
     if (detail.type === 'scripted') {
       this.scriptedLines = detail.lines;
@@ -98,10 +106,8 @@ export class DialogueManager {
     if (this.scriptedIndex < this.scriptedLines.length) {
       this.textEl.textContent = this.scriptedLines[this.scriptedIndex];
       this.scriptedIndex++;
-      // Add to history
       this._addToHistory(this.currentNpc.id, 'model', this.scriptedLines[this.scriptedIndex - 1]);
     } else {
-      // Scripted intro done — transition to AI
       this._transitionToAI();
     }
   }
@@ -116,28 +122,27 @@ export class DialogueManager {
     this.conversationType = 'ai';
     this.continueBtn.classList.add('hidden');
     this.textEl.textContent = 'What do you say?';
-
-    const choices = document.createElement('div');
-    choices.id = 'dialogue-choices';
     this.choicesEl.innerHTML = '';
+    this.customInputContainer.classList.add('hidden');
 
-    const options = [
+    this._buildChoiceButtons([
       'Tell me about yourself.',
       'What\'s happening in the city?',
       'Can you help me?',
       'Goodbye.',
-    ];
-
-    options.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.textContent = `💬 ${opt}`;
-      btn.addEventListener('click', () => this._aiChat(opt));
-      this.choicesEl.appendChild(btn);
-    });
+    ]);
   }
 
-  _showAIOptions(playerMsg) {
+  /**
+   * Show options after an AI response (or initial transition).
+   * @param {string} [previousMsg] - the player's previous message for context
+   */
+  _showAIOptions(previousMsg) {
     this.choicesEl.innerHTML = '';
+    this.customInputContainer.classList.add('hidden');
+    this.customInput.value = '';
+
+    // Contextual options based on the NPC
     const options = [
       'Tell me about yourself.',
       'What\'s happening in the city?',
@@ -145,70 +150,164 @@ export class DialogueManager {
       'Goodbye.',
     ];
 
-    // If talking to Kade, add a challenge option
     if (this.currentNpc?.id === 'kade') {
       options.push('I want to fight you.');
     }
 
+    this._buildChoiceButtons(options);
+  }
+
+  /**
+   * Build choice buttons + a custom input option.
+   */
+  _buildChoiceButtons(options) {
+    this.choicesEl.innerHTML = '';
+
     options.forEach(opt => {
       const btn = document.createElement('button');
       btn.textContent = `💬 ${opt}`;
-      btn.addEventListener('click', () => {
-        if (opt === 'I want to fight you.') {
-          this._close();
-          document.dispatchEvent(new CustomEvent('initiate-battle', {
-            detail: { npc: this.currentNpc }
-          }));
-        } else if (opt === 'Goodbye.') {
-          this._closeAndMaybeGiveItem();
-        } else {
-          this._aiChat(opt);
-        }
-      });
+      btn.addEventListener('click', () => this._onChoiceSelected(opt));
       this.choicesEl.appendChild(btn);
     });
+
+    // Custom input option (always last)
+    const customBtn = document.createElement('button');
+    customBtn.textContent = `✏️ Say something else...`;
+    customBtn.classList.add('custom-input-trigger');
+    customBtn.addEventListener('click', () => this._showCustomInput());
+    this.choicesEl.appendChild(customBtn);
+  }
+
+  _showCustomInput() {
+    this.choicesEl.innerHTML = '';
+    this.customInputContainer.classList.remove('hidden');
+    this.customInput.focus();
+  }
+
+  _sendCustomInput() {
+    const text = this.customInput.value.trim();
+    if (!text) return;
+    this.customInputContainer.classList.add('hidden');
+    this.customInput.value = '';
+    this._aiChat(text);
+  }
+
+  _onChoiceSelected(opt) {
+    if (opt === 'I want to fight you.') {
+      this._close();
+      document.dispatchEvent(new CustomEvent('initiate-battle', {
+        detail: { npc: this.currentNpc }
+      }));
+    } else if (opt === 'Goodbye.') {
+      this._closeAndMaybeGiveItem();
+    } else {
+      this._aiChat(opt);
+    }
   }
 
   async _aiChat(playerMessage) {
     this.textEl.textContent = '🤔 Thinking...';
     this.choicesEl.innerHTML = '';
     this.continueBtn.classList.add('hidden');
+    this.customInputContainer.classList.add('hidden');
 
     this._addToHistory(this.currentNpc.id, 'user', playerMessage);
 
     const npc = this.currentNpc;
     const history = this._getNpcHistory(npc.id);
 
+    let responseText;
+    let actions = [];
+
     try {
-      const response = await generateNPCDialogue(npc.systemPrompt, history, playerMessage);
-      this.textEl.textContent = response;
-      this._addToHistory(npc.id, 'model', response);
+      const result = await generateNPCDialogue(npc.systemPrompt, history, playerMessage);
+      responseText = result.text;
+      actions = result.actions || [];
     } catch (err) {
-      console.error('Gen AI failed:', err);
+      console.error('Dialogue error:', err);
       const fallbacks = [
-        'Interesting question. I\'m not sure I have an answer right now.',
+        'Interesting question. Not sure I have an answer right now.',
         'The city keeps its secrets. Maybe ask me something else.',
         'I\'d tell you, but I\'m still figuring it out myself.',
       ];
-      const fallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-      this.textEl.textContent = fallback;
-      this._addToHistory(npc.id, 'model', fallback);
+      responseText = fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
 
+    this.textEl.textContent = responseText;
+    this._addToHistory(npc.id, 'model', responseText);
+
+    // Dispatch any AI-suggested actions
+    this._dispatchActions(actions);
+
     this._showAIOptions(playerMessage);
+  }
+
+  /**
+   * Dispatch game actions parsed from AI response metadata.
+   */
+  _dispatchActions(actions) {
+    for (const action of actions) {
+      switch (action.action) {
+        case 'give_item':
+          if (action.item_id) {
+            document.dispatchEvent(new CustomEvent('npc-give-item', {
+              detail: {
+                npc: this.currentNpc,
+                itemId: action.item_id,
+                message: action.message || `${this.currentNpc?.name} hands you something.`
+              }
+            }));
+          }
+          break;
+
+        case 'initiate_battle':
+          setTimeout(() => {
+            this._close();
+            document.dispatchEvent(new CustomEvent('initiate-battle', {
+              detail: { npc: this.currentNpc }
+            }));
+          }, 1500);
+          // Show a warning in the dialogue
+          this.textEl.textContent += '\n\n⚔️ They square up...';
+          break;
+
+        case 'emote':
+          // NPC visual reaction handled by the mesh system
+          document.dispatchEvent(new CustomEvent('npc-emote', {
+            detail: { npc: this.currentNpc, type: action.type || 'neutral' }
+          }));
+          break;
+
+        case 'npc_move':
+          document.dispatchEvent(new CustomEvent('npc-move', {
+            detail: {
+              npc: this.currentNpc,
+              x: action.x,
+              z: action.z,
+              message: action.message || ''
+            }
+          }));
+          break;
+
+        default:
+          console.log('Unknown AI action:', action.action);
+      }
+    }
   }
 
   _closeAndMaybeGiveItem() {
     const npc = this.currentNpc;
 
-    // First meeting item give
     if (npc.givesItem && npc.conversationCount === 1) {
       document.dispatchEvent(new CustomEvent('npc-give-item', {
-        detail: { npc, itemId: npc.givesItem.id, message: npc.givesItem.onGiveMessage }
+        detail: {
+          npc,
+          itemId: npc.givesItem.id,
+          message: npc.givesItem.onGiveMessage
+        }
       }));
     }
 
-    // Check battle trigger (Kade battle after dialogue)
     if (npc.canBattle && npc.conversationCount >= 2) {
       document.dispatchEvent(new CustomEvent('initiate-battle', {
         detail: { npc }
@@ -221,6 +320,7 @@ export class DialogueManager {
   _close() {
     this.isOpen = false;
     this.box.classList.add('hidden');
+    this.customInputContainer.classList.add('hidden');
     this.promptEl.classList.remove('hidden');
     this.currentNpc = null;
   }

@@ -17,6 +17,8 @@ export class GameEngine {
     this.raycaster = new THREE.Raycaster();
     this.interactable = null;
     this.isLocked = false; // mouse lock state
+    this.updateCallbacks = [];
+    this.elapsedTime = 0;
 
     this._initRenderer();
     this._initCamera();
@@ -234,6 +236,13 @@ export class GameEngine {
   }
 
   /**
+   * Register a per-frame update callback. Receives (delta, totalElapsed).
+   */
+  registerUpdateCallback(fn) {
+    this.updateCallbacks.push(fn);
+  }
+
+  /**
    * Start the game loop.
    */
   start() {
@@ -242,10 +251,16 @@ export class GameEngine {
     const loop = () => {
       requestAnimationFrame(loop);
       const delta = this.clock.getDelta();
+      this.elapsedTime += delta;
 
       if (!this.playerLocked) {
         this._updatePlayer(delta);
         this._checkInteractions();
+      }
+
+      // Custom update callbacks (particles, animations, etc.)
+      for (const cb of this.updateCallbacks) {
+        cb(delta, this.elapsedTime);
       }
 
       this.renderer.render(this.scene, this.camera);

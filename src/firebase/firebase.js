@@ -12,9 +12,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Server-side token handling: Firebase Gen AI calls go through the Vertex AI API
-// which authenticates via the project's service account. In browser SDK,
-// Firebase Vertex AI preview uses the Firebase app credentials implicitly.
 let vertexAI = null;
 let genModel = null;
 
@@ -27,15 +24,49 @@ try {
 }
 
 /**
+ * Parse JSON action metadata from the end of an AI response.
+ * Expected format: {...text...} followed by optional JSON block:
+ * ```
+ * Text response.
+ * {"action": "give_item", "item_id": "health_potion"}
+ * ```
+ * Returns { text: string, actions: Array }
+ */
+function parseActions(response) {
+  // Look for a standalone JSON object after the last newline or at end
+  const jsonRegex = /\n?\s*\{(?:\s*"action"|"event")\s*:.*\}$/s;
+  const match = response.match(jsonRegex);
+
+  if (!match) {
+    return { text: response.trim(), actions: [] };
+  }
+
+  let actions = [];
+  try {
+    const parsed = JSON.parse(match[0].trim());
+    actions = Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    // Invalid JSON, treat as part of text
+    return { text: response.trim(), actions: [] };
+  }
+
+  const text = response.slice(0, match.index).trim();
+  return { text, actions };
+}
+
+/**
  * Generate an NPC response using Firebase Gen AI.
  * @param {string} systemPrompt - NPC personality/system prompt
  * @param {Array} history - Previous conversation turns [{role, parts}]
  * @param {string} playerMessage - The player's latest input
- * @returns {Promise<string>} The NPC's response text
+ * @returns {Promise<{text: string, actions: Array}>} The NPC's response
  */
 export async function generateNPCDialogue(systemPrompt, history, playerMessage) {
   if (!genModel) {
-    return `[NPC placeholder] I'm not connected to AI right now, but nice to meet you!`;
+    return {
+      text: `[Connecting...] I'm not online right now, but nice to meet you!`,
+      actions: []
+    };
   }
 
   const chat = genModel.startChat({
@@ -43,8 +74,17 @@ export async function generateNPCDialogue(systemPrompt, history, playerMessage) 
     systemInstruction: systemPrompt,
   });
 
-  const result = await chat.sendMessage(playerMessage);
-  return result.response.text();
+  try {
+    const result = await chat.sendMessage(playerMessage);
+    const raw = result.response.text();
+    return parseActions(raw);
+  } catch (err) {
+    console.error('Gen AI error:', err);
+    return {
+      text: `[Signal lost...] The city's network is glitching. Try again in a moment.`,
+      actions: []
+    };
+  }
 }
 
 export { app };
