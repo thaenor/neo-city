@@ -1,7 +1,8 @@
 import { GameFeel } from '../feel/GameFeel.js';
+import { getRandomEnemyType, createEnemy, calculateDamage } from './EnemyTypes.js';
 
 /**
- * MVP Combat System — turn-based. Now with game feel!
+ * MVP Combat System — turn-based. Now with enemy types, combos, and game feel!
  */
 export class CombatSystem {
   constructor(engine) {
@@ -37,17 +38,17 @@ export class CombatSystem {
     this.comboCount = 0;
     this.lastHitTime = 0;
 
-    this.enemy = {
-      name: npc.name,
-      maxHp: 60 + Math.floor(Math.random() * 40),
-      hp: 0,
-      attack: 8 + Math.floor(Math.random() * 6),
-      defense: 3 + Math.floor(Math.random() * 4),
-    };
+    // Pick enemy type based on NPC or random
+    const typeDef = getRandomEnemyType();
+    this.enemy = createEnemy(typeDef);
     this.enemy.hp = this.enemy.maxHp;
+    this.enemy.name = npc.name; // Keep the NPC's name
+    this.enemy.turnCount = 0;
+    this.enemy.dodgeCount = 0;
 
     this.turn = 'player';
     this.log = [`⚔️ Battle with ${npc.name} begins!`];
+    this.log.push(`📋 ${npc.name} is a **${typeDef.name}**-type enemy.`);
 
     this.engine.setPlayerLock(true);
     if (this.feel) this.feel.addTrauma(0.3);
@@ -74,24 +75,30 @@ export class CombatSystem {
         this.lastHitTime = now;
         const comboMult = 1 + this.comboCount * 0.15; // +15% per chain hit
 
-        const dmg = Math.max(1, Math.round((this.player.attack - this.enemy.defense + Math.floor(Math.random() * 4)) * comboMult));
-        this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
-        this.log.push(`You strike ${this.enemy.name} for ${dmg} damage!`);
+        // Scout dodge check
+        if (this.enemy.attackPattern === 'fast' && this.enemy.dodgeCount >= 2) {
+          this.enemy.dodgeCount = 0;
+          this.log.push(`${this.enemy.name} nimbly dodges your attack!`);
+          if (this.feel) this.feel.addTrauma(0.15);
+          this.log.push(`You strike ${this.enemy.name} for 0 damage!`);
+        } else {
+          this.enemy.dodgeCount = (this.enemy.dodgeCount || 0) + 1;
+          const dmg = Math.max(1, Math.round((this.player.attack - this.enemy.defense + Math.floor(Math.random() * 4)) * comboMult));
+          this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+          this.log.push(`You strike ${this.enemy.name} for ${dmg} damage!`);
 
-        // Game feel
-        if (this.feel) {
-          this.feel.hitstop(70);
-          this.feel.addTrauma(0.4);
-          this.feel.punchFov(this.engine.camera, 4, this.engine.baseFov);
-          if (this.enemy && this.enemy.material) {
-            this.feel.flashHit(this.enemy.material, 2.4, 0.22);
+          // Game feel
+          if (this.feel) {
+            this.feel.hitstop(70);
+            this.feel.addTrauma(0.4);
+            this.feel.punchFov(this.engine.camera, 4, this.engine.baseFov);
           }
-        }
 
-        // Emit damage number event
-        document.dispatchEvent(new CustomEvent('damage-number', {
-          detail: { amount: dmg, type: 'player' }
-        }));
+          // Emit damage number
+          document.dispatchEvent(new CustomEvent('damage-number', {
+            detail: { amount: dmg, type: 'player' }
+          }));
+        }
         break;
       }
       case 'defend': {
@@ -123,30 +130,53 @@ export class CombatSystem {
   }
 
   async _enemyTurn() {
-    // Brief pause with telegraph warning
-    if (this.feel) this.feel.addTrauma(0.15); // warning shake
+    // Tank only attacks every 2 turns
+    this.enemy.turnCount = (this.enemy.turnCount || 0) + 1;
+    if (this.enemy.attackPattern === 'heavy' && this.enemy.turnCount % 2 !== 0) {
+      this.log.push(`${this.enemy.name} winds up a heavy attack...`);
+      // Telegraph: strong shake
+      if (this.feel) this.feel.addTrauma(0.25);
+      this.turn = 'player';
+      this._renderCombatUI();
+      return;
+    }
+
+    // Telegraph based on attack pattern
+    const telegraphType = this.enemy.attackPattern === 'heavy' ? 'quake' :
+                          this.enemy.attackPattern === 'fast' ? 'quick' : 'standard';
+    document.dispatchEvent(new CustomEvent('combat-telegraph', {
+      detail: { type: telegraphType }
+    }));
+
+    if (this.feel) this.feel.addTrauma(0.2); // warning shake
     await new Promise(r => setTimeout(r, 500));
 
-    const dmg = Math.max(1, this.enemy.attack - this.player.defense + Math.floor(Math.random() * 4));
-    this.player.hp = Math.max(0, this.player.hp - dmg);
-    this.log.push(`${this.enemy.name} strikes you for ${dmg} damage!`);
+    // Use attack pattern
+    const result = calculateDamage(
+      this.enemy.attack, this.player.defense,
+      this.enemy.attackPattern, this.enemy.name
+    );
+    this.player.hp = Math.max(0, this.player.hp - result.damage);
+    this.log.push(result.message);
 
-    // Game feel
-    if (this.feel) {
-      this.feel.hitstop(60);
-      this.feel.addTrauma(0.35);
-      this.feel.punchFov(this.engine.camera, 3, this.engine.baseFov);
+    if (!result.dodged) {
+      // Game feel on hit
+      if (this.feel) {
+        this.feel.hitstop(this.enemy.attackPattern === 'heavy' ? 90 : 60);
+        this.feel.addTrauma(this.enemy.attackPattern === 'heavy' ? 0.5 : 0.35);
+        this.feel.punchFov(this.engine.camera, this.enemy.attackPattern === 'heavy' ? 6 : 3, this.engine.baseFov);
+      }
+
+      // Squash-and-stretch on the player mesh
+      if (this.engine.player && this.feel) {
+        this.feel.squash(this.engine.player, this.enemy.attackPattern === 'heavy' ? 0.75 : 0.85, 0.18);
+      }
+
+      // Damage number
+      document.dispatchEvent(new CustomEvent('damage-number', {
+        detail: { amount: result.damage, type: 'enemy' }
+      }));
     }
-
-    // Squash-and-stretch on the player mesh
-    if (this.engine.player && this.feel) {
-      this.feel.squash(this.engine.player, 0.85, 0.18);
-    }
-
-    // Damage number
-    document.dispatchEvent(new CustomEvent('damage-number', {
-      detail: { amount: dmg, type: 'enemy' }
-    }));
 
     if (this.player.hp <= 0) {
       this._defeat();
@@ -185,6 +215,8 @@ export class CombatSystem {
     this.engine.setPlayerLock(false);
     if (this.feel) { this.feel.addTrauma(0.6); this.feel.punchFov(this.engine.camera, 6, this.engine.baseFov); }
     document.dispatchEvent(new CustomEvent('combat-end', { detail: { result: 'victory' } }));
+    // Defeat animation
+    document.dispatchEvent(new CustomEvent('defeat-animation', { detail: { enemy: this.enemy } }));
   }
 
   _defeat() {

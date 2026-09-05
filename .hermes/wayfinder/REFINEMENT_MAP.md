@@ -23,9 +23,9 @@ Upgrade the AI Experimental Future City game from prototype (~0.85 visual scorec
 
 | Ticket | Status | Type | 
 |--------|--------|------|
-| S1 Game Feel (screenshake, hitstop, flash, pickup pop, FOV punch) | 🔵 Open | Gameplay |
-| S2 UI Redesign (combat HUD, inventory grid, dialogue panel) | 🔵 Open | UI |
-| S3 Player Model Upgrade (faceted character, armor, weapon) | 🔵 Open | Graphics |
-| S4 Combat Depth (enemy types, telegraphs, defeat anim, combo) | 🔵 Open | Gameplay |
-| S5 Post-Processing & Lighting (bloom, vignette, FOV tuning) | 🔵 Open | Graphics |
-| S6 Review & Merge Pass | 🔵 Open | QA |
+| [S1 Game Feel (screenshake, hitstop, flash, pickup pop, FOV punch)](tickets/S1-game-feel.md) | ✅ Closed | Gameplay |
+| [S2 UI Redesign (combat HUD, inventory grid, dialogue panel)](tickets/S2-ui-redesign.md) | ✅ Closed | UI |
+| [S3 Player Model Upgrade (faceted character, armor, weapon)](tickets/S3-player-model.md) | ✅ Closed | Graphics |
+| [S4 Combat Depth (enemy types, telegraphs, defeat anim, combo)](tickets/S4-combat-depth.md) | 🔵 Open | Gameplay |
+| [S5 Post-Processing & Lighting (bloom, vignette, FOV tuning)](tickets/S5-post-processing.md) | 🔵 Open | Graphics |
+| [S6 Review & Merge Pass](tickets/S6-review.md) | 🔵 Open | QA |

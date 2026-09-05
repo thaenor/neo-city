@@ -129,7 +129,46 @@ document.addEventListener('npc-move', (e) => {
   animateMove();
 });
 
-// ─── Combat ───
+// ─── Combat telegraphs ───
+document.addEventListener('combat-telegraph', (e) => {
+  const { type } = e.detail;
+  // Flash the enemy HP bar red as warning
+  if (enemyHpFill) {
+    enemyHpFill.style.transition = 'background 0.1s';
+    enemyHpFill.style.background = '#ff4444';
+    setTimeout(() => {
+      enemyHpFill.style.transition = '';
+      enemyHpFill.style.background = '';
+    }, 300);
+  }
+  // Extra shake for heavy telegraph
+  if (type === 'quake' && feel) {
+    feel.addTrauma(0.3);
+  }
+});
+
+// ─── Defeat animation ───
+document.addEventListener('defeat-animation', (e) => {
+  const overlay = document.getElementById('combat-overlay');
+  if (!overlay) return;
+  // Create burst particles
+  for (let i = 0; i < 8; i++) {
+    const particle = document.createElement('div');
+    particle.style.cssText = `
+      position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      background: #ff6644; pointer-events: none; z-index: 100;
+      left: 50%; top: 35%;
+      box-shadow: 0 0 6px rgba(255,102,68,0.8);
+    `;
+    overlay.appendChild(particle);
+    const angle = (i / 8) * Math.PI * 2;
+    const dist = 60 + Math.random() * 40;
+    particle.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist}px)) scale(0)`, opacity: 0 },
+    ], { duration: 600, easing: 'ease-out' }).onfinish = () => particle.remove();
+  }
+});
 document.addEventListener('initiate-battle', (e) => {
   combat.startCombat(e.detail.npc);
 });

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 /**
  * Manages the 3D scene, renderer, camera, and game loop.
@@ -21,10 +24,12 @@ export class GameEngine {
     this.elapsedTime = 0;
     this.feel = null;
     this.baseFov = 60;
+    this.composer = null;
 
     this._initRenderer();
     this._initCamera();
     this._initLights();
+    this._initPostProcessing();
     this._initControls();
   }
 
@@ -76,6 +81,31 @@ export class GameEngine {
     const fill = new THREE.DirectionalLight(0x4488ff, 0.4);
     fill.position.set(-30, 40, -20);
     this.scene.add(fill);
+  }
+
+  _initPostProcessing() {
+    try {
+      this.composer = new EffectComposer(this.renderer);
+      const renderPass = new RenderPass(this.scene, this.camera);
+      this.composer.addPass(renderPass);
+
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.15,   // strength
+        0.4,    // radius
+        0.2     // threshold
+      );
+      this.composer.addPass(bloomPass);
+
+      window.addEventListener('resize', () => {
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      console.log('✨ Bloom post-processing enabled');
+    } catch (e) {
+      console.warn('⚠️ Post-processing not available:', e.message);
+      this.composer = null;
+    }
   }
 
   _initControls() {
@@ -406,7 +436,12 @@ export class GameEngine {
         cb(delta, this.elapsedTime);
       }
 
-      this.renderer.render(this.scene, this.camera);
+      // Render with post-processing if available
+      if (this.composer) {
+        this.composer.render();
+      } else {
+        this.renderer.render(this.scene, this.camera);
+      }
     };
     loop();
   }
