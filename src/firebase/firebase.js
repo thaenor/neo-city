@@ -86,8 +86,19 @@ export async function generateNPCDialogue(systemPrompt, history, playerMessage) 
     };
   }
 
+  // Firebase Gen AI requires history to start with role 'user'.
+  // Scripted intro lines store role 'model' — strip leading non-user entries.
+  let sanitizedHistory = (history || []).slice(-10);
+  const firstUserIdx = sanitizedHistory.findIndex(e => e.role === 'user');
+  if (firstUserIdx > 0) {
+    sanitizedHistory = sanitizedHistory.slice(firstUserIdx);
+  } else if (firstUserIdx === -1) {
+    // No user entry at all — synthesise one
+    sanitizedHistory = [{ role: 'user', parts: [{ text: 'Hello.' }] }];
+  }
+
   const chat = genModel.startChat({
-    history: history.slice(-10),
+    history: sanitizedHistory,
     systemInstruction: systemPrompt,
   });
 

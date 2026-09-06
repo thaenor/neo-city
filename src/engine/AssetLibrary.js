@@ -82,7 +82,11 @@ export class AssetLibrary {
     if (!dataUri) throw new Error(`AssetLibrary: unknown HDRI "${name}"`);
     const bytes = this._dataUriToBytes(dataUri);
     // EXRLoader.parse() wants the underlying ArrayBuffer (DataView requires it)
-    const texture = await this._exrLoader.parse(bytes.buffer);
+    const texture = this._exrLoader.parse(bytes.buffer);
+    // Validate texture has pixel data — r185 EXR format may leave .image undefined
+    if (!texture || !texture.image) {
+      throw new Error(`HDRI "${name}" parsed but texture.image is undefined — EXR format may be incompatible with three.js r185`);
+    }
     texture.mapping = THREE.EquirectangularReflectionMapping;
     texture.colorSpace = THREE.LinearSRGBColorSpace;
     this._cache.set(`hdri:${name}`, texture);

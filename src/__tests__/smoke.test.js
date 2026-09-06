@@ -18,10 +18,14 @@ const requiredExports = {
   'src/combat/CombatSystem.js': ['CombatSystem'],
   'src/combat/EnemyTypes.js': ['ENEMY_TYPES', 'getRandomEnemyType', 'createEnemy'],
   'src/feel/GameFeel.js': ['GameFeel'],
+  'src/feel/MoodSystem.js': ['MoodSystem'],
+  'src/feel/WorldEffects.js': ['WorldEffects'],
   'src/ui/DialogueManager.js': ['DialogueManager'],
   'src/items/Inventory.js': ['Inventory', 'ITEM_DEFINITIONS'],
   'src/npc/NPC.js': ['NPC', 'NPC_DEFINITIONS'],
   'src/world/CityBuilder.js': ['buildCity'],
+  'src/engine/AssetLibrary.js': ['AssetLibrary'],
+  'src/engine/AssetDemo.js': ['integrateAssetDemo'],
   'src/main.js': [],
 };
 
@@ -45,7 +49,7 @@ for (const [file, exports] of Object.entries(requiredExports)) {
 
   // Check each required export name appears in the source as a named export
   for (const exp of exports) {
-    if (!source.includes(`export ${exp}`) && !source.includes(`export class ${exp}`) && !source.includes(`export function ${exp}`) && !source.includes(`export const ${exp}`)) {
+    if (!source.includes(`export ${exp}`) && !source.includes(`export class ${exp}`) && !source.includes(`export function ${exp}`) && !source.includes(`export const ${exp}`) && !source.includes(`export async function ${exp}`)) {
       console.log(`❌ ${file} missing export: ${exp}`);
       failed++;
     } else {

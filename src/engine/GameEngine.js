@@ -17,7 +17,7 @@ export class GameEngine {
     this.keys = {};
     this.mouseX = 0;
     this.mouseY = 0;
-    this.clock = new THREE.Clock();
+    this.clock = new THREE.Timer();
     this.raycaster = new THREE.Raycaster();
     this.interactable = null;
     this.isLocked = false; // mouse lock state
@@ -44,7 +44,7 @@ export class GameEngine {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
 
@@ -219,7 +219,11 @@ export class GameEngine {
    */
   lockControls() {
     if (!this.isLocked) {
-      this.canvas.requestPointerLock();
+      try {
+        this.canvas.requestPointerLock();
+      } catch {
+        // Browser may deny if document isn't focused — user click will trigger it later
+      }
       document.addEventListener('pointerlockchange', () => {
         this.isLocked = document.pointerLockElement === this.canvas;
       });
@@ -516,10 +520,22 @@ export class GameEngine {
    * Start the game loop.
    */
   start() {
-    this.lockControls();
+    // Defer pointer lock to user gesture (click on canvas) so it never fails
+    // on page load when the document isn't focused.
+    const onFirstClick = () => {
+      this.lockControls();
+      this.canvas.removeEventListener('click', onFirstClick);
+    };
+    this.canvas.addEventListener('click', onFirstClick);
+
+    // Also retry on any click if lock was missed
+    this.canvas.addEventListener('click', () => {
+      if (!this.isLocked) this.lockControls();
+    });
 
     const loop = () => {
       requestAnimationFrame(loop);
+      this.clock.update();
       const delta = this.clock.getDelta();
       this.elapsedTime += delta;
 
