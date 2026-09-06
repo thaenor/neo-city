@@ -6,6 +6,8 @@ import { DialogueManager } from './ui/DialogueManager.js';
 import { Inventory, ITEM_DEFINITIONS } from './items/Inventory.js';
 import { GameFeel, popElement } from './feel/GameFeel.js';
 import { integrateAssetDemo } from './engine/AssetDemo.js';
+import { MoodSystem } from './feel/MoodSystem.js';
+import { WorldEffects } from './feel/WorldEffects.js';
 import * as THREE from 'three';
 
 const engine = new GameEngine('game-canvas');
@@ -17,6 +19,14 @@ const feel = new GameFeel();
 // Wire game feel into engine and combat
 engine.setFeelInstances(feel);
 combat.setFeel(feel);
+
+// ─── Mood System & World Effects ───
+const moodSystem = new MoodSystem();
+const worldEffects = new WorldEffects(moodSystem, engine);
+engine.registerUpdateCallback((delta) => worldEffects.update(delta));
+
+// Expose mood system to dialogue manager for AI context
+dialogue.setMoodSystem(moodSystem);
 
 // ─── Build World ───
 buildCity(engine.scene);

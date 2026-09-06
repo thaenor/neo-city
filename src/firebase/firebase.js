@@ -25,32 +25,49 @@ try {
 
 /**
  * Parse JSON action metadata from the end of an AI response.
- * Expected format: {...text...} followed by optional JSON block:
+ * Expected format: {...text...} followed by optional JSON blocks:
  * ```
  * Text response.
  * {"action": "give_item", "item_id": "health_potion"}
+ * {"action": "mood_shift", "target": "echo", "deltas": {"amusement": +10}}
  * ```
  * Returns { text: string, actions: Array }
  */
 function parseActions(response) {
-  // Look for a standalone JSON object after the last newline or at end
-  const jsonRegex = /\n?\s*\{(?:\s*"action"|"event")\s*:.*\}$/s;
-  const match = response.match(jsonRegex);
-
-  if (!match) {
-    return { text: response.trim(), actions: [] };
-  }
-
+  // Match ALL JSON objects that contain "action" at any depth
+  // Each JSON object must be on its own line or at the end
+  const jsonRegex = /\{[^{}]*"action"[^{}]*\}/g;
   let actions = [];
-  try {
-    const parsed = JSON.parse(match[0].trim());
-    actions = Array.isArray(parsed) ? parsed : [parsed];
-  } catch {
-    // Invalid JSON, treat as part of text
-    return { text: response.trim(), actions: [] };
+  let text = response;
+
+  let match;
+  while ((match = jsonRegex.exec(response)) !== null) {
+    try {
+      const parsed = JSON.parse(match[0]);
+      const actionArr = Array.isArray(parsed) ? parsed : [parsed];
+      actions = actions.concat(actionArr);
+      // Remove the JSON from the text
+      text = text.replace(match[0], '');
+    } catch {
+      // Invalid JSON, skip it
+    }
   }
 
-  const text = response.slice(0, match.index).trim();
+  text = text.trim();
+
+  // Legacy: also try the old single-JSON-at-end format
+  if (actions.length === 0) {
+    const legacyRegex = /\n\s*\{(?:\s*"action"\s*:.*)\}$/s;
+    const legacyMatch = response.match(legacyRegex);
+    if (legacyMatch) {
+      try {
+        const parsed = JSON.parse(legacyMatch[0].trim());
+        actions = Array.isArray(parsed) ? parsed : [parsed];
+        text = response.slice(0, legacyMatch.index).trim();
+      } catch {}
+    }
+  }
+
   return { text, actions };
 }
 

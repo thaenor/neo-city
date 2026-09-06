@@ -34,7 +34,7 @@ export class DialogueManager {
 
     // NPC color accent map (id → hex color)
     this.npcColors = {
-      nova: '#ff66aa',
+      nova: '#aa88ff',
       kade: '#ff4444',
       zara: '#88ddff',
       rigo: '#ffaa44',
@@ -45,6 +45,14 @@ export class DialogueManager {
 
     this._loadSessionHistory();
     this._bindEvents();
+  }
+
+  /**
+   * Connect a MoodSystem instance for mood-aware AI context.
+   * Must be called before any AI dialogue.
+   */
+  setMoodSystem(moodSystem) {
+    this.moodSystem = moodSystem;
   }
 
   _loadSessionHistory() {
@@ -277,11 +285,25 @@ export class DialogueManager {
     const npc = this.currentNpc;
     const history = this._getNpcHistory(npc.id);
 
+    // Inject mood context if MoodSystem is connected
+    let augmentedSystemPrompt = npc.systemPrompt;
+    if (this.moodSystem) {
+      const mood = this.moodSystem.getMood(npc.id);
+      const label = this.moodSystem.getMoodLabel(npc.id);
+      const cityLabel = this.moodSystem.getCityLabel();
+      const memoryCtx = this.moodSystem.getMemoryContext(npc.id);
+      const allMoods = Object.keys(this.moodSystem.moods).map(id =>
+        `${id}: ${this.moodSystem.getMoodLabel(id)}`
+      ).join(', ');
+      augmentedSystemPrompt += `\n\nCurrent context — Your mood: ${label} (trust:${mood.trust} anger:${mood.anger} curiosity:${mood.curiosity} amusement:${mood.amusement}). City mood: ${cityLabel}.`;      augmentedSystemPrompt += ` Others: ${allMoods}.`;
+      if (memoryCtx) augmentedSystemPrompt += `\n${memoryCtx}`;
+    }
+
     let responseText;
     let actions = [];
 
     try {
-      const result = await generateNPCDialogue(npc.systemPrompt, history, playerMessage);
+      const result = await generateNPCDialogue(augmentedSystemPrompt, history, playerMessage);
       responseText = result.text;
       actions = result.actions || [];
     } catch (err) {
@@ -306,6 +328,11 @@ export class DialogueManager {
 
     // Dispatch any AI-suggested actions
     this._dispatchActions(actions);
+
+    // Record interaction in MoodSystem
+    if (this.moodSystem) {
+      this.moodSystem.recordInteraction(npc.id, playerMessage, responseText);
+    }
 
     this._showAIOptions(playerMessage);
   }
@@ -355,6 +382,21 @@ export class DialogueManager {
               message: action.message || ''
             }
           }));
+          break;
+
+        case 'mood_shift':
+          if (this.moodSystem) {
+            if (action.target === 'all') {
+              this.moodSystem.applyDeltaAll(action.deltas || {});
+            } else {
+              this.moodSystem.applyDelta(action.target, action.deltas || {});
+            }
+          }
+          break;
+
+        case 'city_effect':
+          // Handled by WorldEffects on the next frame — just log it
+          console.log('🌆 City effect triggered:', action.effect_type, action.value);
           break;
 
         default:
