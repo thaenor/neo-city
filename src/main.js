@@ -49,6 +49,14 @@ document.addEventListener('npc-far', () => {
   prompt.classList.add('hidden');
 });
 
+// ─── Dialogue lock/unlock player movement ───
+document.addEventListener('dialogue-open', () => {
+  engine.setPlayerLock(true);
+});
+document.addEventListener('dialogue-close', () => {
+  engine.setPlayerLock(false);
+});
+
 // ─── NPC gives item ───
 document.addEventListener('npc-give-item', (e) => {
   const { npc: giverNpc, itemId } = e.detail;

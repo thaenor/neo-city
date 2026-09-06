@@ -111,7 +111,7 @@ export class GameEngine {
   _initControls() {
     document.addEventListener('keydown', (e) => {
       this.keys[e.key.toLowerCase()] = true;
-      if (e.key === 'e' && this.interactable) {
+      if (e.key === 'e' && this.interactable && !this.playerLocked) {
         this.interactable.onInteract?.();
       }
       if (e.key === 'i') {

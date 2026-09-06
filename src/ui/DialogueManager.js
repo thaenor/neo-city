@@ -101,6 +101,9 @@ export class DialogueManager {
     this.box.classList.remove('hidden');
     this.promptEl.classList.add('hidden');
 
+    // Lock player movement during dialogue
+    document.dispatchEvent(new CustomEvent('dialogue-open', { detail: { npc: detail.npc } }));
+
     // Set accent color + name
     const accent = this.npcColors[detail.npc.id] || '#8cf';
     this.nameEl.textContent = detail.npc.name;
@@ -389,5 +392,8 @@ export class DialogueManager {
     this.customInputContainer.classList.add('hidden');
     this.promptEl.classList.remove('hidden');
     this.currentNpc = null;
+
+    // Unlock player movement
+    document.dispatchEvent(new CustomEvent('dialogue-close'));
   }
 }
