@@ -31,22 +31,6 @@ NPC_DEFINITIONS.forEach(def => {
   npcs[def.id] = npc;
 });
 
-// ─── Particle animation ───
-engine.registerUpdateCallback((delta, time) => {
-  const p = window.__gameParticles;
-  if (!p) return;
-  p.time += delta;
-  const pos = p.positions;
-  for (let i = 0; i < 600; i++) {
-    pos[i * 3 + 1] += Math.sin(p.time * 0.5 + i * 0.1) * delta * 0.02;
-    pos[i * 3] += Math.sin(p.time * 0.3 + i * 0.05) * delta * 0.01;
-    pos[i * 3 + 2] += Math.cos(p.time * 0.4 + i * 0.07) * delta * 0.01;
-    if (pos[i * 3 + 1] > 6) pos[i * 3 + 1] = 0.5;
-    if (pos[i * 3 + 1] < 0.5) pos[i * 3 + 1] = 6;
-  }
-  p.particles.geometry.attributes.position.needsUpdate = true;
-});
-
 // ─── Start Game Loop ───
 engine.start();
 document.getElementById('hud').classList.remove('hidden');

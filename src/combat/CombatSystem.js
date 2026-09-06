@@ -1,4 +1,3 @@
-import { GameFeel } from '../feel/GameFeel.js';
 import { getRandomEnemyType, createEnemy, calculateDamage } from './EnemyTypes.js';
 
 /**
