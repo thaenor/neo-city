@@ -5,6 +5,7 @@ import { CombatSystem } from './combat/CombatSystem.js';
 import { DialogueManager } from './ui/DialogueManager.js';
 import { Inventory, ITEM_DEFINITIONS } from './items/Inventory.js';
 import { GameFeel, popElement } from './feel/GameFeel.js';
+import { integrateAssetDemo } from './engine/AssetDemo.js';
 import * as THREE from 'three';
 
 const engine = new GameEngine('game-canvas');
@@ -35,6 +36,13 @@ NPC_DEFINITIONS.forEach(def => {
 engine.start();
 document.getElementById('hud').classList.remove('hidden');
 document.getElementById('interaction-prompt').classList.remove('hidden');
+
+// ─── @pmndrs/assets demo: HDRI envmap + GroundedSkybox + suzi prop ─────
+// Non-blocking — runs after the game loop is up so it never delays boot.
+// Failures degrade gracefully: the procedural Preetham sky keeps rendering.
+integrateAssetDemo(engine).catch((err) => {
+  console.warn('⚠️ Asset demo failed to initialise:', err);
+});
 
 // ─── NPC interaction prompts ───
 document.addEventListener('npc-near', (e) => {
