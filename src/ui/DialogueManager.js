@@ -280,9 +280,11 @@ export class DialogueManager {
     this.continueBtn.classList.add('hidden');
     this.customInputContainer.classList.add('hidden');
 
-    this._addToHistory(this.currentNpc.id, 'user', playerMessage);
-
     const npc = this.currentNpc;
+    // Get history BEFORE adding this turn's user message.
+    // history should end with the previous 'model' response so that
+    // sendMessage(playerMessage) is the user's next turn — Firebase
+    // validates alternating user→model→user→model in the history.
     const history = this._getNpcHistory(npc.id);
 
     // Inject mood context if MoodSystem is connected
@@ -317,6 +319,8 @@ export class DialogueManager {
     }
 
     this.textEl.textContent = '';
+    // Store this turn: user message then AI response
+    this._addToHistory(npc.id, 'user', playerMessage);
     this._addToHistory(npc.id, 'model', responseText);
 
     // Use typewriter for AI responses under 200 chars

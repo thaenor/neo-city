@@ -86,15 +86,47 @@ export async function generateNPCDialogue(systemPrompt, history, playerMessage) 
     };
   }
 
-  // Firebase Gen AI requires history to start with role 'user'.
-  // Scripted intro lines store role 'model' — strip leading non-user entries.
+  // Firebase Gen AI requires alternating user→model→user→model.
+  // History must end with 'model' so sendMessage() can be the next user turn.
+  // Scripted intro stores only 'model' entries — strip those entirely
+  // and let sendMessage be the first user turn.
   let sanitizedHistory = (history || []).slice(-10);
+
+  // Strip leading entries until history starts with a valid alternating pair.
+  // Rule: valid sequences must start with 'user', but we can't end with 'user'
+  // because sendMessage is the next user.
   const firstUserIdx = sanitizedHistory.findIndex(e => e.role === 'user');
-  if (firstUserIdx > 0) {
+  if (firstUserIdx >= 0) {
     sanitizedHistory = sanitizedHistory.slice(firstUserIdx);
-  } else if (firstUserIdx === -1) {
-    // No user entry at all — synthesise one
-    sanitizedHistory = [{ role: 'user', parts: [{ text: 'Hello.' }] }];
+  }
+
+  // History must end with 'model' for sendMessage to be valid user follow-up.
+  // If history ends with 'user', remove trailing user entries.
+  while (sanitizedHistory.length > 0) {
+    const last = sanitizedHistory[sanitizedHistory.length - 1];
+    if (last.role === 'user') {
+      sanitizedHistory.pop();
+    } else if (last.role === 'model') {
+      break;
+    } else {
+      sanitizedHistory.pop();
+    }
+  }
+
+  // Remove any consecutive duplicates ('model' can't follow 'model').
+  const deduped = [];
+  for (const entry of sanitizedHistory) {
+    if (deduped.length > 0 && deduped[deduped.length - 1].role === entry.role) {
+      continue; // skip consecutive same role
+    }
+    deduped.push(entry);
+  }
+  sanitizedHistory = deduped;
+
+  // If history starts with 'model' (e.g. only scripted intros exist),
+  // strip it — sendMessage() will be the first user turn.
+  if (sanitizedHistory.length > 0 && sanitizedHistory[0].role === 'model') {
+    sanitizedHistory = [];
   }
 
   const chat = genModel.startChat({
