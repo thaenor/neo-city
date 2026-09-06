@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -26,9 +27,15 @@ export class GameEngine {
     this.baseFov = 60;
     this.composer = null;
 
+    // City boundary clamp bounds (player stays within this XZ rectangle).
+    // Walls at these same values act as physics blockers for future raycast use.
+    this.bounds = { minX: -15, maxX: 15, minZ: -15, maxZ: 15 };
+
     this._initRenderer();
     this._initCamera();
     this._initLights();
+    this._initScene();
+    this._initSky();
     this._initPostProcessing();
     this._initControls();
   }
@@ -81,6 +88,90 @@ export class GameEngine {
     const fill = new THREE.DirectionalLight(0x4488ff, 0.4);
     fill.position.set(-30, 40, -20);
     this.scene.add(fill);
+  }
+
+  /**
+   * Create invisible boundary walls along the city edges.
+   * Walls use MeshBasicMaterial with visible:false so they don't render,
+   * but remain in the scene graph as physics blockers for future raycasts.
+   * Actual player containment is handled by clamping in _updatePlayer().
+   */
+  _initScene() {
+    const { minX, maxX, minZ, maxZ } = this.bounds;
+    const wallHeight = 6;
+    const wallThickness = 1;
+    const spanX = maxX - minX;
+    const spanZ = maxZ - minZ;
+
+    const wallMat = new THREE.MeshBasicMaterial({ visible: false });
+
+    // North wall (minZ edge) — spans full X range, thin in Z
+    const wallNorth = new THREE.Mesh(
+      new THREE.BoxGeometry(spanX + wallThickness * 2, wallHeight, wallThickness),
+      wallMat
+    );
+    wallNorth.position.set(0, wallHeight / 2, minZ - wallThickness / 2);
+    wallNorth.name = 'city-wall-north';
+    this.scene.add(wallNorth);
+
+    // South wall (maxZ edge)
+    const wallSouth = new THREE.Mesh(
+      new THREE.BoxGeometry(spanX + wallThickness * 2, wallHeight, wallThickness),
+      wallMat
+    );
+    wallSouth.position.set(0, wallHeight / 2, maxZ + wallThickness / 2);
+    wallSouth.name = 'city-wall-south';
+    this.scene.add(wallSouth);
+
+    // West wall (minX edge) — spans full Z range, thin in X
+    const wallWest = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, wallHeight, spanZ),
+      wallMat
+    );
+    wallWest.position.set(minX - wallThickness / 2, wallHeight / 2, 0);
+    wallWest.name = 'city-wall-west';
+    this.scene.add(wallWest);
+
+    // East wall (maxX edge)
+    const wallEast = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, wallHeight, spanZ),
+      wallMat
+    );
+    wallEast.position.set(maxX + wallThickness / 2, wallHeight / 2, 0);
+    wallEast.name = 'city-wall-east';
+    this.scene.add(wallEast);
+
+    // Group reference for future raycast/physics work
+    this.boundaryWalls = [wallNorth, wallSouth, wallWest, wallEast];
+  }
+
+  /**
+   * Create a Preetham atmospheric sky dome configured for a cyberpunk night.
+   * Low sun → cold blue/purple gradient; the dome is huge (scale 10000) so
+   * it surrounds the player and reads as an infinite skybox.
+   */
+  _initSky() {
+    this.sky = new Sky();
+    this.sky.scale.setScalar(10000);
+
+    const uniforms = this.sky.material.uniforms;
+    uniforms.turbidity.value = 10;
+    uniforms.rayleigh.value = 1;
+    uniforms.mieCoefficient.value = 0.005;
+    uniforms.mieDirectionalG.value = 0.7;
+
+    // Low sun for night cyberpunk feel: keep magnitude small, point
+    // just above the horizon. Preetham normalizes this internally.
+    const sunPosition = new THREE.Vector3();
+    const phi = THREE.MathUtils.degToRad(90 - 2);   // 2° above horizon
+    const theta = THREE.MathUtils.degToRad(180);    // due south
+    sunPosition.setFromSphericalCoords(1, phi, theta);
+    uniforms.sunPosition.value.copy(sunPosition);
+
+    // Use the sky dome itself as the visible background. Sky already has
+    // BackSide + depthWrite:false so it renders behind everything.
+    this.scene.background = null;
+    this.scene.add(this.sky);
   }
 
   _initPostProcessing() {
@@ -352,6 +443,12 @@ export class GameEngine {
       // Face movement direction
       this.player.rotation.y = Math.atan2(dir.x, dir.z);
     }
+
+    // Clamp player to city bounds — primary containment mechanism.
+    // Boundary walls in _initScene() are the spatial reference / future raycast target.
+    const { minX, maxX, minZ, maxZ } = this.bounds;
+    this.player.position.x = Math.max(minX, Math.min(maxX, this.player.position.x));
+    this.player.position.z = Math.max(minZ, Math.min(maxZ, this.player.position.z));
 
     // Camera follows player with orbit offset
     const camDist = 10;
